@@ -4,6 +4,11 @@ function App() {
   const [items, setItems] = useState([])
   const [categories, setCategories] = useState([])
 
+  const [name, setName] = useState('')
+  const [CategoryId, setCategoryId] = useState('')
+  const [wear, setWear] = useState('')
+  const [price, setPrice] = useState('')
+
   function loadItems(type) {
     fetch(`http://localhost:5284/inventory/${type}`)
       .then(response => response.json())
@@ -30,6 +35,33 @@ function App() {
 
   }, []);
 
+  function addItem(e) {
+    e.preventDefault();
+
+    const newItem = {
+      name: name,
+      CategoryId: Number(CategoryId),
+      wear: Number(wear),
+      price: Number(price)
+    };
+    fetch('http://localhost:5284/inventory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newItem)
+    })
+      .then(res => {
+        if (res.ok) {
+          loadItems('All');
+          setName('');
+          setCategoryId('');
+          setWear('');
+          setPrice('');
+        }
+      })
+      .catch(err => console.error('Помиилка створення', err));
+  }
+
+
   return (
     <div>
       <h1>Арсенал </h1>
@@ -41,11 +73,47 @@ function App() {
           </button>
         )}
       </div>
+      <form className="add-form" onSubmit={addItem}>
+        <input
+          type="text"
+          placeholder="Назва зброї"
+          value={name}
+          onChange={e => setName(e.target.value)}
+          required
+        ></input>
+        <select
+          value={CategoryId}
+          onChange={e => setCategoryId(e.target.value)}
+          required
+        >
+          <option value="">Оберіть тип</option>
+          {categories.map(category =>
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
+          )}
+        </select>
+        <input
+          type="number"
+          step="0.01"
+          placeholder="Знос"
+          value={wear}
+          onChange={e => setWear(e.target.value)}
+          required
+        ></input>
+        <input
+          type="number"
+          placeholder="Ціна"
+          value={price}
+          onChange={e => setPrice(e.target.value)}
+          required
+        ></input>
+        <button type="submit"> Додати зброю</button>
+      </form>
 
       <div className="inventory-container">
         {items.map(item => (
-          <div key={items.id} className="card">
-            <h3>{items.name}</h3>
+          <div key={item.id} className="card">
             <p className="item-name">{item.name}</p>
             <p className="item-type">{item.category?.name}</p>
             <p className="wear">{item.wear}</p>
