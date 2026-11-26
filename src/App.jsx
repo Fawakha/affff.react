@@ -4,10 +4,44 @@ function App() {
   const [items, setItems] = useState([])
   const [categories, setCategories] = useState([])
 
+  const [editingId, setEditingId] = useState(null);
+  const [editName, setEditName] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editWear, setEditWear] = useState('');
+  const [editPrice, setEditPrice] = useState('');
+
   const [name, setName] = useState('')
   const [CategoryId, setCategoryId] = useState('')
   const [wear, setWear] = useState('')
   const [price, setPrice] = useState('')
+
+  function startEdit(item) {
+    setEditingId(item.id)
+    setEditName(item.name);
+    setEditCategory(item.categoryId);
+    setEditWear(item.wear);
+    setEditPrice(item.price);
+  }
+  function saveEdit(id) {
+    const updatedItem = {
+      name: editName,
+      CategoryId: Number(editCategory),
+      wear: Number(editWear),
+      price: Number(editPrice),
+    }
+    fetch(`http://localhost:5284/inventory/${id}`, {
+      method: `PUT`,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedItem)
+    })
+      .then(res => {
+        if (res.ok) {
+          loadItems('All')
+          setEditingId(null)
+        }
+      })
+      .catch(err => console.error('Помилка оновлення', err))
+  }
 
   function loadItems(type) {
     fetch(`http://localhost:5284/inventory/${type}`)
@@ -111,20 +145,55 @@ function App() {
         <button type="submit"> Додати зброю</button>
       </form>
 
+
       <div className="inventory-container">
         {items.map(item => (
           <div key={item.id} className="card">
-            <p className="item-name">{item.name}</p>
-            <p className="item-type">{item.category?.name}</p>
-            <p className="wear">{item.wear}</p>
-            <p className="price">{item.price}</p>
-            <button className="delete-btn" onClick={() => deleteItem(item.id)}>
-              Видалити
-            </button>
+            {editingId === item.id ? (
+              <div>
+                <input
+                  type='text'
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                ></input>
+                <select
+                  value={setEditCategory}
+                  onChange={e => setEditCategory(e.target.value)}
+                >
+                  {categories.map(category => (
+                    <option key={category.id} value={category.id}
+                    >{category.name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editWear}
+                  onChange={e => setEditWear(e.target.value)}
+                ></input>
+                <input
+                  type="number"
+                  value={editPrice}
+                  onChange={e => setEditPrice(e.target.value)}
+                ></input>
+                <button onClick={() => saveEdit(item.id)}>Зберегти</button>
+                <button onClick={() => setEditingId(null)}>Скасувати</button>
+              </div>
+            ) : (
+              <div>
+                <h3>{item.name}</h3>
+                <p>{item.category?.name}</p>
+                <p>{item.wear}</p>
+                <p>{item.price}</p>
+                <button onClick={() => startEdit(item)}>Редагувати</button>
+                <button onClick={() => deleteItem(item.id)}>Видалити</button>
+              </div>
+            )}
           </div>
         ))}
       </div>
     </div>
-  );
+  )
 }
 export default App;
